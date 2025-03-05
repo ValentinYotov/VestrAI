@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -8,6 +11,47 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   double _budget = 0;
   double _riskLevel = 1;
+  String _bitcoinPrice = 'Зареждане...';
+  late Timer _timer; // Таймер за периодично обновяване
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBitcoinPrice(); // Първоначално извличане
+    // Стартиране на таймер за обновяване на всеки 10 секунди
+    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+      _fetchBitcoinPrice();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); // Спиране на таймера при затваряне на екрана
+    super.dispose();
+  }
+
+  Future<void> _fetchBitcoinPrice() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final price = data['bitcoin']['usd'].toString();
+        setState(() {
+          _bitcoinPrice = '\$$price';
+        });
+      } else {
+        setState(() {
+          _bitcoinPrice = 'Грешка при зареждане';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _bitcoinPrice = 'Грешка: $e';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               'Твоят личен инвестиционен помощник',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Текуща цена на Биткойн: $_bitcoinPrice',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             Text('Колко искаш да инвестираш? (лв)'),
@@ -66,8 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                      content: Text(
-                          'Покажи предложения за $_budget лв, риск: ${_riskLevel.round()}')),
+                    content: Text(
+                        'Покажи предложения за $_budget лв, риск: ${_riskLevel.round()}'),
+                  ),
                 );
               },
               child: Text('Покажи ми предложения'),
