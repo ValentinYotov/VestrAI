@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter_animate/flutter_animate.dart'; // Добавяне за анимации
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -78,94 +79,234 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1C2526), // Черен фон
       appBar: AppBar(
-        title: Text('VestrAI'),
+        backgroundColor: const Color(0xFF2F3A44), // Тъмносив AppBar
+        title: const Text(
+          'VestrAI',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 16.0),
             child: Image.asset(
-              'assets/logo.jpg', // Указваме правилния файл
-              height: 40, // Регулиране на височината на логото
-              fit: BoxFit.contain, // Осигурява правилно мащабиране
+              'assets/logo.jpg',
+              height: 40,
+              fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
-                // Този callback ще се изпълни, ако логото не се зареди
                 print('Грешка при зареждане на логото: $error');
-                return Icon(Icons.error); // Показва икона за грешка, ако логото не се зареди
+                return const Icon(Icons.error, color: Colors.white);
               },
             ),
           ),
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            // Заглавие с анимация
+            const Text(
               'Добре дошъл в VestrAI',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ).animate().fadeIn(duration: 500.ms),
+            const SizedBox(height: 8),
+            const Text(
               'Твоят личен инвестиционен помощник',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Текуща цена на Биткойн: $_bitcoinPrice',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _fetchBitcoinPrice,
-              child: Text('Обнови цената'),
-            ),
-            SizedBox(height: 20),
-            Text('Колко искаш да инвестираш? (лв)'),
-            TextField(
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                setState(() {
-                  _budget = double.tryParse(value) ?? 0;
-                });
-              },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Въведи сума',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
+            const SizedBox(height: 20),
+            // Карта за цената
+            Card(
+              color: const Color(0xFF2F3A44),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 8,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Текуща цена на Биткойн:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _bitcoinPrice,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFF0B90B), // Жълт акцент
+                      ),
+                    ).animate().fadeIn(duration: 300.ms),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF0B90B), // Жълт бутон
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: _fetchBitcoinPrice,
+                      child: const Text('Обнови цената'),
+                    ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 20),
-            Text('Ниво на риск:'),
-            Slider(
-              value: _riskLevel,
-              min: 1,
-              max: 3,
-              divisions: 2,
-              label: _riskLevel == 1
-                  ? 'Нисък'
-                  : _riskLevel == 2
-                      ? 'Среден'
-                      : 'Висок',
-              onChanged: (value) {
-                setState(() {
-                  _riskLevel = value;
-                });
-              },
+            const SizedBox(height: 20),
+            // Бюджет
+            Card(
+              color: const Color(0xFF2F3A44),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 8,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Колко искаш да инвестираш? (лв)',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          _budget = double.tryParse(value) ?? 0;
+                        });
+                      },
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1C2526),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                        hintText: 'Въведи сума',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
+            // Ниво на риск
+            Card(
+              color: const Color(0xFF2F3A44),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 8,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ниво на риск:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Slider(
+                      value: _riskLevel,
+                      min: 1,
+                      max: 3,
+                      divisions: 2,
+                      activeColor: _riskLevel == 1
+                          ? Colors.green
+                          : _riskLevel == 2
+                              ? Colors.orange
+                              : const Color(0xFFF0B90B),
+                      inactiveColor: Colors.grey,
+                      label: _riskLevel == 1
+                          ? 'Нисък'
+                          : _riskLevel == 2
+                              ? 'Среден'
+                              : 'Висок',
+                      onChanged: (value) {
+                        setState(() {
+                          _riskLevel = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Бутон за предложения
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0B90B),
+                foregroundColor: Colors.black,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               onPressed: _generateSuggestion,
-              child: Text('Покажи ми предложения'),
+              child: const Text(
+                'Покажи ми предложения',
+                style: TextStyle(fontSize: 18),
+              ),
             ),
-            SizedBox(height: 10),
-            Text(
-              _investmentSuggestion,
-              style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-            ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 10),
+            // Показване на предложението
+            if (_investmentSuggestion != 'Въведи данни за предложение')
+              Card(
+                color: const Color(0xFF2F3A44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 8,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    _investmentSuggestion,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white,
+                    ),
+                  ).animate().fadeIn(duration: 500.ms),
+                ),
+              ),
+            const SizedBox(height: 20),
+            const Text(
               'Пример: Купи 10 акции на фирма X за 100 лв',
-              style: TextStyle(fontStyle: FontStyle.italic),
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
