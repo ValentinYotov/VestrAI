@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpFormScreen extends StatefulWidget {
-  const SignUpFormScreen({super.key});
-
   @override
   _SignUpFormScreenState createState() => _SignUpFormScreenState();
 }
@@ -13,24 +10,20 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
 
-  // Валидация на имейл
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(email);
-  }
-
-  void _signUp() async {
-    final email = _emailController.text.trim();
+  void _signUp() {
+    final email = _emailController.text;
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
-
-    // Валидация
-    if (!_isValidEmail(email)) {
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Моля, въведи валиден имейл! (напр. user@example.com)')),
+        const SnackBar(content: Text('Моля, попълни всички полета!')),
+      );
+      return;
+    }
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Моля, въведи валиден имейл!')),
       );
       return;
     }
@@ -40,39 +33,18 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
       );
       return;
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Паролата трябва да е поне 6 символа!')),
+        const SnackBar(content: Text('Паролата трябва да е поне 8 символа!')),
       );
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      // Регистрация в Firebase
-      await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      // Навигация към HomeScreen след успешна регистрация
       Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Грешка при регистрацията';
-      if (e.code == 'email-already-in-use') {
-        errorMessage = 'Този имейл вече е регистриран!';
-      } else if (e.code == 'weak-password') {
-        errorMessage = 'Паролата е твърде слаба!';
-      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+        SnackBar(content: Text('Грешка при навигация: $e')),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -188,17 +160,13 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _isLoading
-                        ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF0B90B)),
-                          )
-                        : ElevatedButton(
-                            onPressed: _signUp,
-                            child: const Text(
-                              'Регистрация',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          ).animate().scale(duration: 200.ms),
+                    ElevatedButton(
+                      onPressed: _signUp,
+                      child: const Text(
+                        'Регистрация',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ).animate().scale(duration: 200.ms),
                     const SizedBox(height: 10),
                     TextButton(
                       onPressed: () {

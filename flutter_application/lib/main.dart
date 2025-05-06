@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_form_screen.dart';
+import 'screens/login_form_screen.dart';
+import 'screens/news_screen.dart';
+// Добавен за използване (по избор)
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Инициализира Firebase
+void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -36,9 +34,14 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/login',
       routes: {
-        '/login': (context) => LoginScreen(),
-        '/signup': (context) => SignUpFormScreen(),
-        '/home': (context) => HomeScreen(),
+  '/login': (context) => LoginScreen(),
+  '/signup': (context) => SignUpFormScreen(),
+  '/home': (context) => HomeScreen(),
+  '/login_form': (context) => const LoginFormScreen(),
+  '/news': (context) => const NewsScreen(),
+},
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(builder: (context) => LoginScreen());
       },
     );
   }

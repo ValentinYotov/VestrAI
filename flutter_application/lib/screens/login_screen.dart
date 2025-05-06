@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
-
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -12,59 +9,28 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
 
-  // Валидация на имейл
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(email);
-  }
-
-  void _login() async {
-    final email = _emailController.text.trim();
+  void _login() {
+    final email = _emailController.text;
     final password = _passwordController.text;
-
-    // Валидация
-    if (!_isValidEmail(email)) {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Моля, въведи валиден имейл! (напр. user@example.com)')),
+        const SnackBar(content: Text('Моля, попълни имейл и парола!')),
       );
       return;
     }
-    if (password.length < 6) {
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Паролата трябва да е поне 6 символа!')),
+        const SnackBar(content: Text('Моля, въведи валиден имейл!')),
       );
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      // Влизане с Firebase
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      // Навигация към HomeScreen след успешен вход
       Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Грешка при влизане';
-      if (e.code == 'user-not-found') {
-        errorMessage = 'Няма потребител с този имейл!';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = 'Грешна парола!';
-      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+        SnackBar(content: Text('Грешка при навигация: $e')),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -163,17 +129,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _isLoading
-                        ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF0B90B)),
-                          )
-                        : ElevatedButton(
-                            onPressed: _login,
-                            child: const Text(
-                              'Вход',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          ).animate().scale(duration: 200.ms),
+                    ElevatedButton(
+                      onPressed: _login,
+                      child: const Text(
+                        'Вход',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ).animate().scale(duration: 200.ms),
                     const SizedBox(height: 10),
                     TextButton(
                       onPressed: () {
