@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, Map<String, dynamic>> _assetData = {};
   bool _isLoading = false;
   late Timer _timer;
-  final double _exchangeRate = 1.80; // 1 USD = 1.80 BGN (фиксиран курс за прототип)
+  final double _exchangeRate = 1.80; // 1 USD = 1.80 BGN
 
   @override
   void initState() {
@@ -42,10 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       final response = await http.get(
         Uri.parse(
-            'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,binancecoin,cardano&order=market_cap_desc&per_page=4&page=1&sparkline=false&price_change_percentage=24h'),
+            'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,binancecoin,cardano&order=market_cap_desc&per_page=4&page=1&sparkline=false&price_change_percentage=24h,7d'),
       );
-      print('Статус код: ${response.statusCode}');
-      print('Отговор от API: ${response.body}');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
@@ -54,11 +52,11 @@ class _HomeScreenState extends State<HomeScreen> {
               item['name']: {
                 'price': (item['current_price'] as num?)?.toDouble() ?? 0.0,
                 'priceChange24h': (item['price_change_percentage_24h'] as num?)?.toDouble() ?? 0.0,
+                'priceChange7d': (item['price_change_percentage_7d'] as num?)?.toDouble() ?? 0.0,
                 'marketCap': (item['market_cap'] as num?)?.toDouble() ?? 0.0,
               }
           };
         });
-        print('Данни за активите: $_assetData');
       } else {
         setState(() {
           _investmentSuggestion = 'Грешка при зареждане на данни: ${response.statusCode}';
@@ -68,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _investmentSuggestion = 'Грешка: $e';
       });
-      print('Изключение: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -91,38 +88,38 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Конвертиране на бюджета от BGN в USD
     double budgetInUsd = _budget / _exchangeRate;
 
-    // Изчисляване на оценка за всяка криптовалута
     List<Map<String, dynamic>> scoredAssets = _assetData.entries.map((entry) {
       String assetName = entry.key;
       double price = entry.value['price'];
       double priceChange24h = entry.value['priceChange24h'];
+      double priceChange7d = entry.value['priceChange7d'];
       double marketCap = entry.value['marketCap'];
 
-      // Волатилност: По-голяма промяна в цената = по-висок риск
-      double volatilityScore = priceChange24h.abs() / 100; // Нормализираме (0-1)
+      // Тенденция: Средна оценка от последните 24 часа и 7 дни
+      double trendScore = ((priceChange24h + priceChange7d) / 2) / 100; // Нормализираме (0-1)
       // Стабилност: По-висока пазарна капитализация = по-нисък риск
-      double stabilityScore = marketCap / 1000000000000; // Нормализираме (0-1)
-      // Оценка спрямо риск и хоризонт
+      double stabilityScore = (marketCap / 1000000000000).clamp(0.0, 1.0); // Нормализиране
+      // Рисков фактор
       double riskFactor = _riskLevel == 1 ? 0.3 : _riskLevel == 2 ? 0.6 : 1.0;
+      // Хоризонтен фактор
       double horizonFactor = _isLongTerm ? 0.7 : 0.3;
-      double score = (riskFactor * volatilityScore) + ((1 - riskFactor) * stabilityScore) + horizonFactor;
+      // Обща оценка: 50% тенденция, 30% стабилност, 20% риск/хоризонт
+      double score = (0.5 * trendScore) + (0.3 * (1 - stabilityScore)) + (0.2 * (riskFactor + horizonFactor));
 
       return {
         'name': assetName,
         'score': score,
         'price': price,
-        'volatility': priceChange24h,
+        'trend24h': priceChange24h,
+        'trend7d': priceChange7d,
       };
     }).toList();
 
-    // Сортиране по оценка (най-добрата препоръка е с най-висок резултат)
     scoredAssets.sort((a, b) => b['score'].compareTo(a['score']));
     var bestAsset = scoredAssets.first;
 
-    // Изчисляване на количеството
     double amount = budgetInUsd / bestAsset['price'];
     String formattedAmount = amount.toStringAsFixed(4);
 
@@ -131,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _investmentSuggestion =
-          'Препоръчваме да инвестираш в ${bestAsset['name']}: $formattedAmount единици за $_budget лв (≈${budgetInUsd.toStringAsFixed(2)} USD) при $riskText риск за $horizonText хоризонт\nВолатилност (24ч): ${bestAsset['volatility'].toStringAsFixed(2)}%';
+          'Препоръчваме ${bestAsset['name']} (${bestAsset['trend24h'].toStringAsFixed(2)}% за 24ч, ${bestAsset['trend7d'].toStringAsFixed(2)}% за 7д): $formattedAmount единици за $_budget лв (≈${budgetInUsd.toStringAsFixed(2)} USD) при $riskText риск за $horizonText хоризонт. Причина: Позитивна тенденция и балансиран риск.';
     });
   }
 
@@ -140,38 +137,31 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF1C2526),
       appBar: AppBar(
-  backgroundColor: const Color(0xFF2F3A44),
-  title: const Text(
-    'VestrAI',
-    style: TextStyle(color: Colors.white),
-  ),
-  actions: [
-    IconButton(
-      icon: const Icon(Icons.newspaper, color: Colors.white),
-      onPressed: () {
-        Navigator.pushNamed(context, '/news');
-      },
-      tooltip: 'Новини',
-    ),
-    IconButton(
-      icon: const Icon(Icons.refresh, color: Colors.white),
-      onPressed: _fetchAssetData,
-      tooltip: 'Опресни данни',
-    ),
-    Padding(
-      padding: const EdgeInsets.only(right: 16.0),
-      child: Image.asset(
-        'assets/logo.jpg',
-        height: 40,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          print('Грешка при зареждане на логото: $error');
-          return const Icon(Icons.error, color: Colors.white);
-        },
+        backgroundColor: const Color(0xFF2F3A44),
+        title: const Text(
+          'VestrAI',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _fetchAssetData,
+            tooltip: 'Опресни данни',
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Image.asset(
+              'assets/logo.jpg',
+              height: 40,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print('Грешка при зареждане на логото: $error');
+                return const Icon(Icons.error, color: Colors.white);
+              },
+            ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

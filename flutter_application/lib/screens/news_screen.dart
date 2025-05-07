@@ -16,7 +16,6 @@ class _NewsScreenState extends State<NewsScreen> {
   List<dynamic> _articles = [];
   bool _isLoading = false;
   late Timer _timer;
-  String _filterKeyword = '';
 
   @override
   void initState() {
@@ -40,12 +39,19 @@ class _NewsScreenState extends State<NewsScreen> {
       });
       final response = await http.get(
         Uri.parse(
-            'https://newsapi.org/v2/everything?q=cryptocurrency&apiKey=YOUR_API_KEY_HERE&language=en&pageSize=10'),
+            'https://newsapi.org/v2/everything?q=cryptocurrency&apiKey=c1c38275e0ed46cc8fc2cbb78ddbcc17&language=en&pageSize=10&sortBy=publishedAt'),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _articles = data['articles'];
+          _articles = (data['articles'] as List)
+              .where((article) => article['publishedAt'] != null)
+              .toList()
+            ..sort((a, b) {
+              DateTime dateA = DateTime.parse(a['publishedAt']);
+              DateTime dateB = DateTime.parse(b['publishedAt']);
+              return dateB.compareTo(dateA); // Сортиране в намаляващ ред (най-новите първо)
+            });
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,20 +79,8 @@ class _NewsScreenState extends State<NewsScreen> {
     }
   }
 
-  List<dynamic> _getFilteredArticles() {
-    if (_filterKeyword.isEmpty) return _articles;
-    return _articles.where((article) {
-      final title = article['title']?.toString().toLowerCase() ?? '';
-      final description = article['description']?.toString().toLowerCase() ?? '';
-      return title.contains(_filterKeyword.toLowerCase()) ||
-          description.contains(_filterKeyword.toLowerCase());
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final filteredArticles = _getFilteredArticles();
-
     return Scaffold(
       backgroundColor: const Color(0xFF1C2526),
       appBar: AppBar(
@@ -98,115 +92,80 @@ class _NewsScreenState extends State<NewsScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              color: const Color(0xFF2F3A44),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 8,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        onChanged: (value) {
-                          setState(() {
-                            _filterKeyword = value;
-                          });
-                        },
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: const Color(0xFF1C2526),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                          hintText: 'Филтрирай по ключова дума (напр. btc)',
-                          hintStyle: const TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: _fetchNews,
-                      child: const Text('Опресни'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (_isLoading)
-              const Center(
+        child: _isLoading
+            ? const Center(
                 child: CircularProgressIndicator(
                   color: Color(0xFFF0B90B),
                 ),
-              ),
-            if (!_isLoading && filteredArticles.isEmpty)
-              const Center(
-                child: Text(
-                  'Няма филтрирани новини. Опитай отново!',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            if (!_isLoading && filteredArticles.isNotEmpty)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filteredArticles.length,
-                  itemBuilder: (context, index) {
-                    final article = filteredArticles[index];
-                    final title = article['title'] ?? 'Без заглавие';
-                    final description = article['description'] ?? 'Няма описание';
-                    final url = article['url'] ?? '';
-                    final imageUrl = article['urlToImage'] ?? '';
+              )
+            : _articles.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Няма новини. Опитай отново по-късно!',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _articles.length,
+                    itemBuilder: (context, index) {
+                      final article = _articles[index];
+                      final title = article['title'] ?? 'Без заглавие';
+                      final description = article['description'] ?? 'Няма описание';
+                      final url = article['url'] ?? '';
+                      final imageUrl = article['urlToImage'] ?? '';
+                      final publishedAt = article['publishedAt'] != null
+                          ? DateTime.parse(article['publishedAt']).toLocal().toString().split('.')[0]
+                          : 'Без дата';
 
-                    return Card(
-                      color: const Color(0xFF2F3A44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 8,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListTile(
-                        leading: imageUrl.isNotEmpty
-                            ? Image.network(
-                                imageUrl,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.error, color: Colors.white),
-                              )
-                            : const Icon(Icons.image_not_supported, color: Colors.grey),
-                        title: Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                      return Card(
+                        color: const Color(0xFF2F3A44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 8,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          leading: imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.error, color: Colors.white),
+                                )
+                              : const Icon(Icons.image_not_supported, color: Colors.grey),
+                          title: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                description,
+                                style: const TextStyle(color: Colors.grey),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Публикувана: $publishedAt',
+                                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.open_in_new, color: Color(0xFFF0B90B)),
+                            onPressed: () => _launchURL(url),
                           ),
                         ),
-                        subtitle: Text(
-                          description,
-                          style: const TextStyle(color: Colors.grey),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.open_in_new, color: Color(0xFFF0B90B)),
-                          onPressed: () => _launchURL(url),
-                        ),
-                      ),
-                    ).animate().fadeIn(duration: 300.ms).slideX();
-                  },
-                ),
-              ),
-          ],
-        ),
+                      ).animate().fadeIn(duration: 300.ms).slideX();
+                    },
+                  ),
       ),
     );
   }
