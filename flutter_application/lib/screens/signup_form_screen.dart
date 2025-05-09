@@ -23,15 +23,15 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
         _passwordController.text.trim(),
         _usernameController.text.trim(),
       );
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Грешка при регистрация: $e')),
       );
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -64,12 +64,12 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
                 obscureText: true,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _signUp,
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Регистрация'),
-              ),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _signUp,
+                      child: const Text('Регистрация'),
+                    ),
             ],
           ),
         ),
