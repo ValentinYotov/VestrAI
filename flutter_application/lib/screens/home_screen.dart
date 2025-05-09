@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../services/firebase_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -147,46 +148,56 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1C2526),
-     appBar: AppBar(
-  backgroundColor: const Color(0xFF2F3A44),
-  title: const Text(
-    'VestrAI',
-    style: TextStyle(color: Colors.white),
-  ),
-  actions: [
-    IconButton(
-      icon: const Icon(Icons.newspaper, color: Colors.white),
-      onPressed: () {
-        Navigator.pushNamed(context, '/news');
-      },
-      tooltip: 'Новини',
-    ),
-    IconButton(
-      icon: const Icon(Icons.show_chart, color: Colors.white),
-      onPressed: () {
-        Navigator.pushNamed(context, '/market');
-      },
-      tooltip: 'Пазар',
-    ),
-    IconButton(
-      icon: const Icon(Icons.refresh, color: Colors.white),
-      onPressed: _fetchAssetData,
-      tooltip: 'Опресни данни',
-    ),
-    Padding(
-      padding: const EdgeInsets.only(right: 16.0),
-      child: Image.asset(
-        'assets/logo.jpg',
-        height: 40,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          print('Грешка при зареждане на логото: $error');
-          return const Icon(Icons.error, color: Colors.white);
-        },
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2F3A44),
+        title: const Text(
+          'VestrAI',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.newspaper, color: Colors.white),
+            onPressed: () {
+              Navigator.pushNamed(context, '/news');
+            },
+            tooltip: 'Новини',
+          ),
+          IconButton(
+            icon: const Icon(Icons.show_chart, color: Colors.white),
+            onPressed: () {
+              Navigator.pushNamed(context, '/market');
+            },
+            tooltip: 'Пазар',
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _fetchAssetData,
+            tooltip: 'Опресни данни',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Изход',
+            onPressed: () async {
+              await FirebaseService().signOut();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Image.asset(
+              'assets/logo.jpg',
+              height: 40,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print('Грешка при зареждане на логото: $error');
+                return const Icon(Icons.error, color: Colors.white);
+              },
+            ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(

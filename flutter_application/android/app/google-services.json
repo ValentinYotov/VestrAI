@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "321728950660",
+    "project_id": "vestrai-aa3a2",
+    "storage_bucket": "vestrai-aa3a2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:321728950660:android:871b6030b7014fce73add1",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFU_3G_y32PAoWrftEkOTz8iFyLe4-qxU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
