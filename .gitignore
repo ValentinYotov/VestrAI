@@ -1,0 +1,55 @@
+# Ignore Flutter and Dart specific files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+.packages
+/ios/.symlinks
+/ios/Flutter/.last_build_id
+/ios/Flutter/.packages
+/ios/Flutter/flutter_export_environment
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/app.framework
+/ios/Pods/
+/android/.gradle
+/android/gradle/
+/android/captures/
+/android/app/build/
+/android/app/.gradle/
+/build/
+
+# Ignore compiled code and artifacts
+*.dart.js
+*.flutter-bundle
+*.packages
+*.iml
+
+# Ignore secrets and environment variables
+*.env
+.env
+
+# Ignore IDE and editor specific files
+.vscode/
+.DS_Store
+
+# Ignore crash reports and logs
+*.log
+crashes/
+
+# Ignore dependencies directory
+/dependencies/
+
+# Ignore specific files from the image analysis
+flutter_application/.dart_tool/
+flutter_application/.flutter-plugins
+flutter_application/.flutter-plugins-dependencies
+flutter_application/.idea/
+flutter_application/android/
+flutter_application/build/
+flutter_application/flutter_application.iml
+flutter_application/ios/
+flutter_application/linux/
+flutter_application/macos/
+flutter_application/windows/ 
